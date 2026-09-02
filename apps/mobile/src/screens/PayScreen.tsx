@@ -6,7 +6,7 @@ import { useAppState } from "../context/AppState";
 import { useTheme } from "../context/ThemeContext";
 
 export function PayScreen() {
-  const { entitlement, unlockPro } = useAppState();
+  const { entitlement, unlockPro, refreshEntitlement } = useAppState();
   const { colors } = useTheme();
   const [planId, setPlanId] = useState<PlanId>("month");
   const [phone, setPhone] = useState("");
@@ -61,7 +61,12 @@ export function PayScreen() {
     try {
       if (isApiConfigured()) {
         const res = await initiateStk({ planId, phone });
-        Alert.alert("STK sent", `Reference ${res.reference}. Enter your PIN on the phone — never in the app.`);
+        if (res.status === "paid") {
+          await refreshEntitlement(phone);
+          Alert.alert("Pro unlocked", `Reference ${res.reference} (mock provider).`);
+        } else {
+          Alert.alert("STK sent", `Reference ${res.reference}. Enter PIN on the phone — never in the app.`);
+        }
       } else {
         Alert.alert(
           "Payment API not live",
