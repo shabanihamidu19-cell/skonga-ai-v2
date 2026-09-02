@@ -1,34 +1,35 @@
-# SKONGA AI v2
+# SKONGA AI v2 — React Native (Android / iOS)
 
-Tanzanian student AI assistant — **React + React Native + TypeScript** monorepo.
+Expo + TypeScript mobile app: drawer navigation, AsyncStorage, API stubs, EAS Build.
 
-Rewritten from the Capacitor `www/` app in [skonga-ai-v1](https://github.com/shabanihamidu19-cell/skonga-ai-v1).
+v1 Capacitor repo is untouched: https://github.com/shabanihamidu19-cell/skonga-ai-v1
 
-| App | Stack | Path |
-| --- | --- | --- |
-| Web | React 18 + Vite + TypeScript | `apps/web` |
-| Mobile | React Native (Expo 52) + TypeScript | `apps/mobile` |
-| Shared | types, plans, limits, mock chat | `packages/shared` |
-
-**Owner:** KCL Platform TZ · Package: `tz.co.kclplatform.skonga`
-
-## Features
-
-- Chat UI + New Chat + local history
-- Soft free-message limit (8) then Pro sheet
-- Pro plans: 1 Day TSh 620 · 1 Week 3,500 · 1 Month 5,000 · 1 Year 45,000
-- Phone + network detect (M-Pesa / Tigo / Airtel / HaloPesa)
-- Settings: preferred name, theme (web), response style
-- Profile placeholder
-
-Chat and STK Push are **client mocks** until the backend exists. Do not put API secrets in the apps.
-
-## Setup
+## Run
 
 ```bash
 git clone https://github.com/shabanihamidu19-cell/skonga-ai-v2.git
 cd skonga-ai-v2
 npm install
-npm run web       # http://localhost:5173
-npm run mobile    # Expo
+cp apps/mobile/.env.example apps/mobile/.env
+npm run mobile
 ```
+
+## Android / iOS (EAS)
+
+```bash
+cd apps/mobile
+npx eas login
+npx eas build:configure
+npx eas build --platform android --profile preview
+npx eas build --platform ios --profile preview
+```
+
+Replace `extra.eas.projectId` in `apps/mobile/app.json` after configure.
+
+## Layout
+
+- `apps/mobile/src/navigation` — Chat, history drawer, Profile, Settings, Pro
+- `apps/mobile/src/storage` — chats, settings, entitlement
+- `apps/mobile/src/api/client.ts` — POST /v1/chat, /v1/pay/stk, /v1/entitlement, /v1/auth/login
+
+If `EXPO_PUBLIC_API_URL` is empty, chat and STK use local fallbacks. Do not put payment or LLM secrets in the app.
