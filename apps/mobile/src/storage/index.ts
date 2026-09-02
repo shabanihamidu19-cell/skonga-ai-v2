@@ -1,5 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import type { ChatThread, Entitlement, UserSettings } from "@skonga/shared";
+import type { ChatThread, Entitlement, Note, UserSettings } from "@skonga/shared";
 import { defaultEntitlement, defaultSettings } from "@skonga/shared";
 
 const KEYS = {
@@ -7,6 +7,7 @@ const KEYS = {
   settings: "skonga.settings",
   entitlement: "skonga.entitlement",
   activeId: "skonga.activeId",
+  notes: "skonga.notes",
 };
 
 export async function loadAppState(): Promise<{
@@ -14,18 +15,21 @@ export async function loadAppState(): Promise<{
   settings: UserSettings;
   entitlement: Entitlement;
   activeId: string | null;
+  notes: Note[];
 }> {
-  const [threadsRaw, settingsRaw, entRaw, activeRaw] = await Promise.all([
+  const [threadsRaw, settingsRaw, entRaw, activeRaw, notesRaw] = await Promise.all([
     AsyncStorage.getItem(KEYS.threads),
     AsyncStorage.getItem(KEYS.settings),
     AsyncStorage.getItem(KEYS.entitlement),
     AsyncStorage.getItem(KEYS.activeId),
+    AsyncStorage.getItem(KEYS.notes),
   ]);
   return {
     threads: threadsRaw ? (JSON.parse(threadsRaw) as ChatThread[]) : [],
     settings: settingsRaw ? { ...defaultSettings(), ...JSON.parse(settingsRaw) } : defaultSettings(),
     entitlement: entRaw ? { ...defaultEntitlement(), ...JSON.parse(entRaw) } : defaultEntitlement(),
     activeId: activeRaw,
+    notes: notesRaw ? (JSON.parse(notesRaw) as Note[]) : [],
   };
 }
 
@@ -44,6 +48,10 @@ export async function saveEntitlement(entitlement: Entitlement): Promise<void> {
 export async function saveActiveId(id: string | null): Promise<void> {
   if (id) await AsyncStorage.setItem(KEYS.activeId, id);
   else await AsyncStorage.removeItem(KEYS.activeId);
+}
+
+export async function saveNotes(notes: Note[]): Promise<void> {
+  await AsyncStorage.setItem(KEYS.notes, JSON.stringify(notes));
 }
 
 export async function clearHistory(): Promise<void> {
