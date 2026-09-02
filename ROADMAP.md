@@ -14,30 +14,37 @@ Owner track for turning the Expo app into a store-ready product for Tanzanian st
 - [x] EAS build profiles (Android APK + iOS)
 - [x] Theme system-wide (dark / light / auto from Settings)
 - [x] All screens use ThemeContext (Chat, Notes, Pay, Profile, Settings, drawer)
-- [x] Icons + splash pipeline (SVG masters + generate-icons.py + app.json paths)
+- [x] Brand PNGs uploaded (`icon.png`, `adaptive-icon.png`, `splash.png`)
 
-## Next — backend (blocks real money and real AI)
+## Done on backend skeleton
 
-- [ ] `POST /v1/chat` with streaming + soft rate limits
-- [ ] TIE library RAG injection for Forms 1–6
-- [ ] `POST /v1/pay/stk` + callback (M-Pesa / Tigo / Airtel / Halo)
-- [ ] `GET /v1/entitlement` source of truth (never trust client alone)
-- [ ] Auth: email/phone OTP or Firebase, secure tokens
+- [x] `apps/api` Express + TypeScript
+- [x] `POST /v1/chat` (LLM optional, tutor fallback)
+- [x] `POST /v1/pay/stk` + `POST /v1/pay/callback` (mock provider)
+- [x] `GET /v1/entitlement`
+- [x] `POST /v1/auth/login` (token in-memory)
+
+## Next — backend production
+
+- [ ] Persistent DB (not in-memory)
+- [ ] Real LLM key on server + streaming
+- [ ] TIE library RAG for Forms 1–6
+- [ ] Real STK aggregator (keys stay on server)
+- [ ] Auth OTP / hashed passwords
 
 ## Next — mobile polish
 
-- [ ] Upload scanned images to backend (multipart), not URI-only text
-- [ ] Final brand PNGs (replace placeholders from design)
-- [ ] Push notifications when AI reply finishes
+- [ ] Upload scanned images (multipart)
+- [ ] Push notifications
 - [ ] EN + SW strings
-- [ ] Crash reporting (Sentry) + analytics (privacy-respecting)
+- [ ] Crash reporting (Sentry)
 
 ## Next — release
 
 - [ ] EAS projectId + signed Android AAB
 - [ ] Apple Developer + TestFlight
-- [ ] Play Console listing (EN/SW), content rating, privacy URL
-- [ ] Legal pages live on HTTPS domain
+- [ ] Play Console listing (EN/SW)
+- [ ] Legal pages on HTTPS
 
 ## Rule
 
