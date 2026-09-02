@@ -15,6 +15,7 @@ import {
   remainingFreeMessages,
   type ChatThread,
   type Entitlement,
+  type Note,
   type PlanId,
   type UserSettings,
 } from "@skonga/shared";
@@ -24,6 +25,7 @@ import {
   loadAppState,
   saveActiveId,
   saveEntitlement,
+  saveNotes,
   saveSettings,
   saveThreads,
 } from "../storage";
@@ -31,18 +33,23 @@ import {
 type AppContextValue = {
   ready: boolean;
   online: boolean;
+  sending: boolean;
   threads: ChatThread[];
   activeId: string | null;
   active: ChatThread | null;
   settings: UserSettings;
   entitlement: Entitlement;
   remaining: number;
+  notes: Note[];
   setActiveId: (id: string | null) => void;
   startNewChat: () => void;
-  send: (text: string) => Promise<"ok" | "limit" | "empty">;
+  send: (text: string) => Promise<"ok" | "limit" | "empty" | "busy">;
   updateSettings: (patch: Partial<UserSettings>) => void;
   unlockPro: (planId: PlanId) => void;
   wipeHistory: () => void;
+  addNote: (title: string, body: string) => void;
+  updateNote: (id: string, title: string, body: string) => void;
+  deleteNote: (id: string) => void;
 };
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -50,8 +57,10 @@ const AppContext = createContext<AppContextValue | null>(null);
 export function AppStateProvider({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false);
   const [online, setOnline] = useState(true);
+  const [sending, setSending] = useState(false);
   const [threads, setThreads] = useState<ChatThread[]>([]);
   const [activeId, setActiveIdState] = useState<string | null>(null);
+  const [notes, setNotes] = useState<Note[]>([]);
   const [settings, setSettings] = useState<UserSettings>({
     preferredName: "",
     theme: "dark",
@@ -71,6 +80,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         setSettings(s.settings);
         setEntitlement(s.entitlement);
         setActiveIdState(s.activeId);
+        setNotes(s.notes);
       })
       .finally(() => setReady(true));
     const unsub = NetInfo.addEventListener((state) => {
@@ -83,6 +93,10 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     if (ready && settings.saveHistory) void saveThreads(threads);
   }, [threads, ready, settings.saveHistory]);
 
+  useEffect(() => {
+    if (ready) void saveNotes(notes);
+  }, [notes, ready]);
+
   const setActiveId = useCallback((id: string | null) => {
     setActiveIdState(id);
     void saveActiveId(id);
@@ -93,61 +107,67 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   }, [setActiveId]);
 
   const send = useCallback(
-    async (text: string): Promise<"ok" | "limit" | "empty"> => {
+    async (text: string): Promise<"ok" | "limit" | "empty" | "busy"> => {
+      if (sending) return "busy";
       const trimmed = text.trim();
       if (!trimmed) return "empty";
       const left = remainingFreeMessages(threads, entitlement.isPro);
       if (left <= 0) return "limit";
 
-      let threadId = activeId;
-      if (!threadId) {
-        const thread: ChatThread = {
-          id: newId("chat"),
-          title: trimmed.slice(0, 36),
-          messages: [],
-          updatedAt: new Date().toISOString(),
-        };
-        threadId = thread.id;
-        setThreads((prev) => [thread, ...prev]);
-        setActiveId(threadId);
-      }
-
-      const user = createMessage("user", trimmed);
-      setThreads((prev) =>
-        prev.map((t) =>
-          t.id === threadId
-            ? { ...t, messages: [...t.messages, user], updatedAt: new Date().toISOString() }
-            : t
-        )
-      );
-
-      let replyText = mockAssistantReply(trimmed, settings.responseStyle);
-      if (isApiConfigured() && online) {
-        try {
-          const res = await sendChat({
-            threadId: threadId!,
-            message: trimmed,
-            style: settings.responseStyle,
-          });
-          replyText = res.reply;
-        } catch {
-          replyText =
-            mockAssistantReply(trimmed, settings.responseStyle) +
-            "\n\n(Backend not reachable — showing local fallback.)";
+      setSending(true);
+      try {
+        let threadId = activeId;
+        if (!threadId) {
+          const thread: ChatThread = {
+            id: newId("chat"),
+            title: trimmed.slice(0, 36),
+            messages: [],
+            updatedAt: new Date().toISOString(),
+          };
+          threadId = thread.id;
+          setThreads((prev) => [thread, ...prev]);
+          setActiveId(threadId);
         }
-      }
 
-      const assistant = createMessage("assistant", replyText);
-      setThreads((prev) =>
-        prev.map((t) =>
-          t.id === threadId
-            ? { ...t, messages: [...t.messages, assistant], updatedAt: new Date().toISOString() }
-            : t
-        )
-      );
-      return "ok";
+        const user = createMessage("user", trimmed);
+        setThreads((prev) =>
+          prev.map((t) =>
+            t.id === threadId
+              ? { ...t, messages: [...t.messages, user], updatedAt: new Date().toISOString() }
+              : t
+          )
+        );
+
+        let replyText = mockAssistantReply(trimmed, settings.responseStyle);
+        if (isApiConfigured() && online) {
+          try {
+            const res = await sendChat({
+              threadId: threadId!,
+              message: trimmed,
+              style: settings.responseStyle,
+            });
+            replyText = res.reply;
+          } catch {
+            replyText =
+              mockAssistantReply(trimmed, settings.responseStyle) +
+              "\n\n(Backend not reachable — showing local fallback.)";
+          }
+        }
+
+        const assistant = createMessage("assistant", replyText);
+        setThreads((prev) =>
+          prev.map((t) =>
+            t.id === threadId
+              ? { ...t, messages: [...t.messages, assistant], updatedAt: new Date().toISOString() }
+              : t
+          )
+        );
+        return "ok";
+      } finally {
+        setSending(false);
+      }
     },
-    [activeId, entitlement.isPro, online, setActiveId, settings.responseStyle, threads]
+    [activeId, entitlement.isPro, online, sending, setActiveId, settings.responseStyle, threads]
   );
 
   const updateSettings = useCallback((patch: Partial<UserSettings>) => {
@@ -173,6 +193,32 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     void clearHistory();
   }, [setActiveId]);
 
+  const addNote = useCallback((title: string, body: string) => {
+    const now = new Date().toISOString();
+    const note: Note = {
+      id: newId("note"),
+      title: title.trim() || "Untitled",
+      body: body.trim(),
+      createdAt: now,
+      updatedAt: now,
+    };
+    setNotes((prev) => [note, ...prev]);
+  }, []);
+
+  const updateNote = useCallback((id: string, title: string, body: string) => {
+    setNotes((prev) =>
+      prev.map((n) =>
+        n.id === id
+          ? { ...n, title: title.trim() || "Untitled", body: body.trim(), updatedAt: new Date().toISOString() }
+          : n
+      )
+    );
+  }, []);
+
+  const deleteNote = useCallback((id: string) => {
+    setNotes((prev) => prev.filter((n) => n.id !== id));
+  }, []);
+
   const active = threads.find((t) => t.id === activeId) ?? null;
   const remaining = remainingFreeMessages(threads, entitlement.isPro);
 
@@ -180,20 +226,45 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     () => ({
       ready,
       online,
+      sending,
       threads,
       activeId,
       active,
       settings,
       entitlement,
       remaining,
+      notes,
       setActiveId,
       startNewChat,
       send,
       updateSettings,
       unlockPro,
       wipeHistory,
+      addNote,
+      updateNote,
+      deleteNote,
     }),
-    [ready, online, threads, activeId, active, settings, entitlement, remaining, setActiveId, startNewChat, send, updateSettings, unlockPro, wipeHistory]
+    [
+      ready,
+      online,
+      sending,
+      threads,
+      activeId,
+      active,
+      settings,
+      entitlement,
+      remaining,
+      notes,
+      setActiveId,
+      startNewChat,
+      send,
+      updateSettings,
+      unlockPro,
+      wipeHistory,
+      addNote,
+      updateNote,
+      deleteNote,
+    ]
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
