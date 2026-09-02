@@ -8,6 +8,7 @@ const KEYS = {
   entitlement: "skonga.entitlement",
   activeId: "skonga.activeId",
   notes: "skonga.notes",
+  token: "skonga.token",
 };
 
 export async function loadAppState(): Promise<{
@@ -16,13 +17,15 @@ export async function loadAppState(): Promise<{
   entitlement: Entitlement;
   activeId: string | null;
   notes: Note[];
+  token: string | null;
 }> {
-  const [threadsRaw, settingsRaw, entRaw, activeRaw, notesRaw] = await Promise.all([
+  const [threadsRaw, settingsRaw, entRaw, activeRaw, notesRaw, token] = await Promise.all([
     AsyncStorage.getItem(KEYS.threads),
     AsyncStorage.getItem(KEYS.settings),
     AsyncStorage.getItem(KEYS.entitlement),
     AsyncStorage.getItem(KEYS.activeId),
     AsyncStorage.getItem(KEYS.notes),
+    AsyncStorage.getItem(KEYS.token),
   ]);
   return {
     threads: threadsRaw ? (JSON.parse(threadsRaw) as ChatThread[]) : [],
@@ -30,6 +33,7 @@ export async function loadAppState(): Promise<{
     entitlement: entRaw ? { ...defaultEntitlement(), ...JSON.parse(entRaw) } : defaultEntitlement(),
     activeId: activeRaw,
     notes: notesRaw ? (JSON.parse(notesRaw) as Note[]) : [],
+    token,
   };
 }
 
@@ -52,6 +56,11 @@ export async function saveActiveId(id: string | null): Promise<void> {
 
 export async function saveNotes(notes: Note[]): Promise<void> {
   await AsyncStorage.setItem(KEYS.notes, JSON.stringify(notes));
+}
+
+export async function saveToken(token: string | null): Promise<void> {
+  if (token) await AsyncStorage.setItem(KEYS.token, token);
+  else await AsyncStorage.removeItem(KEYS.token);
 }
 
 export async function clearHistory(): Promise<void> {
