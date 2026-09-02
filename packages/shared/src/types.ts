@@ -25,6 +25,14 @@ export interface ChatThread {
   updatedAt: string;
 }
 
+export interface Note {
+  id: string;
+  title: string;
+  body: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface UserSettings {
   preferredName: string;
   theme: ThemeMode;
