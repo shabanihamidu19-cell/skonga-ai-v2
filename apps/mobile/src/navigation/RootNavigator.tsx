@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { TouchableOpacity, Text, StyleSheet } from "react-native";
 import { createDrawerNavigator } from "@react-navigation/drawer";
 import { ChatScreen } from "../screens/ChatScreen";
@@ -6,12 +7,22 @@ import { SettingsScreen } from "../screens/SettingsScreen";
 import { ProfileScreen } from "../screens/ProfileScreen";
 import { PayScreen } from "../screens/PayScreen";
 import { DrawerContent } from "./DrawerContent";
-import { colors } from "../theme";
+import { useTheme } from "../context/ThemeContext";
 import type { DrawerParamList } from "./types";
 
 const Drawer = createDrawerNavigator<DrawerParamList>();
 
 export function RootNavigator() {
+  const { colors } = useTheme();
+  const styles = useMemo(
+    () =>
+      StyleSheet.create({
+        proBtn: { marginRight: 12 },
+        proText: { color: colors.accentSoft, fontWeight: "800" },
+      }),
+    [colors]
+  );
+
   return (
     <Drawer.Navigator
       drawerContent={(p) => <DrawerContent {...p} />}
@@ -36,8 +47,3 @@ export function RootNavigator() {
     </Drawer.Navigator>
   );
 }
-
-const styles = StyleSheet.create({
-  proBtn: { marginRight: 12 },
-  proText: { color: colors.accentSoft, fontWeight: "800" },
-});
