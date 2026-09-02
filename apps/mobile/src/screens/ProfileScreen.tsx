@@ -1,10 +1,12 @@
 import { useMemo, useState } from "react";
 import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { isApiConfigured, login } from "../api/client";
+import { useAppState } from "../context/AppState";
 import { useTheme } from "../context/ThemeContext";
 
 export function ProfileScreen() {
   const { colors } = useTheme();
+  const { rememberToken } = useAppState();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
@@ -37,13 +39,14 @@ export function ProfileScreen() {
       return;
     }
     if (!isApiConfigured()) {
-      Alert.alert("Auth not live", "Set EXPO_PUBLIC_API_URL and implement POST /v1/auth/login.");
+      Alert.alert("Auth not live", "Set EXPO_PUBLIC_API_URL then run npm run api.");
       return;
     }
     setBusy(true);
     try {
-      await login(email.trim(), password);
-      Alert.alert("Signed in", "Session token received.");
+      const res = await login(email.trim(), password);
+      rememberToken(res.token);
+      Alert.alert("Signed in", "Session saved on this device.");
     } catch (e) {
       Alert.alert("Login failed", e instanceof Error ? e.message : "Unknown error");
     } finally {
