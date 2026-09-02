@@ -5,10 +5,28 @@ import { generateReply, normalizeStyle } from "./tutor.js";
 
 const PLAN_IDS: PlanId[] = ["day", "week", "month", "year"];
 
+function grantPro(phone: string, planId: PlanId): Entitlement {
+  const plan = PRO_PLANS.find((p) => p.id === planId)!;
+  const expires = new Date();
+  expires.setDate(expires.getDate() + plan.days);
+  const entitlement: Entitlement = {
+    isPro: true,
+    planId,
+    expiresAt: expires.toISOString(),
+  };
+  db.entitlements.set(phone.replace(/\D/g, ""), entitlement);
+  return entitlement;
+}
+
 export const router = Router();
 
 router.get("/health", (_req, res) => {
-  res.json({ ok: true, service: "skonga-api", mode: process.env.LLM_API_KEY ? "llm" : "fallback" });
+  res.json({
+    ok: true,
+    service: "skonga-api",
+    mode: process.env.LLM_API_KEY ? "llm" : "fallback",
+    pay: process.env.PAY_PROVIDER ?? "mock",
+  });
 });
 
 router.post("/v1/chat", async (req, res) => {
@@ -35,20 +53,24 @@ router.post("/v1/pay/stk", (req, res) => {
     return;
   }
   const plan = PRO_PLANS.find((p) => p.id === planId)!;
+  const live = process.env.PAY_PROVIDER === "live";
   const record: PaymentRecord = {
     reference: newRef("stk"),
     planId,
     phone,
-    status: "pending",
+    status: live ? "pending" : "paid",
     createdAt: new Date().toISOString(),
   };
   db.payments.set(record.reference, record);
+  if (!live) grantPro(phone, planId);
   res.json({
     reference: record.reference,
     status: record.status,
     amountTsh: plan.priceTsh,
     network: detectNetwork(phone),
-    hint: "Mock STK. Call POST /v1/pay/callback with { reference, status: \"paid\" } to simulate success. PIN never enters this API.",
+    hint: live
+      ? "Enter PIN on the phone. Do not type PIN in the app."
+      : "Mock provider auto-confirmed. Set PAY_PROVIDER=live when a real aggregator is connected.",
   });
 });
 
@@ -61,18 +83,7 @@ router.post("/v1/pay/callback", (req, res) => {
     return;
   }
   payment.status = status;
-  if (status === "paid") {
-    const plan = PRO_PLANS.find((p) => p.id === payment.planId)!;
-    const expires = new Date();
-    expires.setDate(expires.getDate() + plan.days);
-    const key = payment.phone.replace(/\D/g, "");
-    const entitlement: Entitlement = {
-      isPro: true,
-      planId: payment.planId,
-      expiresAt: expires.toISOString(),
-    };
-    db.entitlements.set(key, entitlement);
-  }
+  if (status === "paid") grantPro(payment.phone, payment.planId);
   res.json({ reference, status: payment.status });
 });
 
