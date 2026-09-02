@@ -1,11 +1,32 @@
+import { useMemo } from "react";
 import { StyleSheet, Text, TouchableOpacity, View, ScrollView } from "react-native";
 import type { DrawerContentComponentProps } from "@react-navigation/drawer";
 import { useAppState } from "../context/AppState";
-import { colors } from "../theme";
+import { useTheme } from "../context/ThemeContext";
 
 export function DrawerContent(props: DrawerContentComponentProps) {
   const { threads, setActiveId, startNewChat, entitlement } = useAppState();
+  const { colors } = useTheme();
   const { navigation } = props;
+  const styles = useMemo(
+    () =>
+      StyleSheet.create({
+        root: { flex: 1, backgroundColor: colors.panel, paddingTop: 56, paddingHorizontal: 16 },
+        brand: { color: colors.text, fontWeight: "800", letterSpacing: 1, marginBottom: 16 },
+        primary: {
+          backgroundColor: colors.accent,
+          borderRadius: 12,
+          padding: 12,
+          alignItems: "center",
+          marginBottom: 12,
+        },
+        primaryText: { color: "#fff", fontWeight: "700" },
+        list: { flex: 1 },
+        item: { color: colors.muted, paddingVertical: 12 },
+        pro: { color: colors.accentSoft, fontWeight: "700", paddingVertical: 16 },
+      }),
+    [colors]
+  );
 
   return (
     <View style={styles.root}>
@@ -47,19 +68,3 @@ export function DrawerContent(props: DrawerContentComponentProps) {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.panel, paddingTop: 56, paddingHorizontal: 16 },
-  brand: { color: colors.text, fontWeight: "800", letterSpacing: 1, marginBottom: 16 },
-  primary: {
-    backgroundColor: colors.accent,
-    borderRadius: 12,
-    padding: 12,
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  primaryText: { color: "white", fontWeight: "700" },
-  list: { flex: 1 },
-  item: { color: colors.muted, paddingVertical: 12 },
-  pro: { color: colors.accentSoft, fontWeight: "700", paddingVertical: 16 },
-});
