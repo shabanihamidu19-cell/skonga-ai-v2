@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Alert,
   ScrollView,
@@ -9,13 +9,55 @@ import {
   View,
 } from "react-native";
 import { useAppState } from "../context/AppState";
-import { colors } from "../theme";
+import { useTheme } from "../context/ThemeContext";
 
 export function NotesScreen() {
   const { notes, addNote, updateNote, deleteNote } = useAppState();
+  const { colors } = useTheme();
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
+
+  const styles = useMemo(
+    () =>
+      StyleSheet.create({
+        root: { flex: 1, backgroundColor: colors.bg, padding: 16 },
+        h: { color: colors.text, fontSize: 22, fontWeight: "700", marginBottom: 12 },
+        input: {
+          borderWidth: 1,
+          borderColor: colors.line,
+          borderRadius: 12,
+          color: colors.text,
+          paddingHorizontal: 12,
+          paddingVertical: 10,
+          marginBottom: 8,
+        },
+        body: { minHeight: 90, textAlignVertical: "top" },
+        row: { flexDirection: "row", gap: 10, alignItems: "center" },
+        btn: {
+          backgroundColor: colors.accent,
+          borderRadius: 12,
+          paddingHorizontal: 16,
+          paddingVertical: 12,
+        },
+        btnText: { color: "white", fontWeight: "700" },
+        ghost: { padding: 10 },
+        ghostText: { color: colors.muted },
+        muted: { color: colors.muted },
+        card: {
+          borderWidth: 1,
+          borderColor: colors.line,
+          borderRadius: 12,
+          padding: 12,
+          marginBottom: 10,
+          backgroundColor: colors.panel,
+        },
+        cardTitle: { color: colors.text, fontWeight: "700", marginBottom: 4 },
+        cardBody: { color: colors.muted, marginBottom: 6 },
+        delete: { color: colors.danger, marginTop: 8, fontWeight: "600" },
+      }),
+    [colors]
+  );
 
   function resetForm() {
     setTitle("");
@@ -103,34 +145,3 @@ export function NotesScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.bg, padding: 16 },
-  h: { color: colors.text, fontSize: 22, fontWeight: "700", marginBottom: 12 },
-  input: {
-    borderWidth: 1,
-    borderColor: colors.line,
-    borderRadius: 12,
-    color: colors.text,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    marginBottom: 8,
-  },
-  body: { minHeight: 90, textAlignVertical: "top" },
-  row: { flexDirection: "row", gap: 10, alignItems: "center" },
-  btn: { backgroundColor: colors.accent, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 12 },
-  btnText: { color: "white", fontWeight: "700" },
-  ghost: { padding: 10 },
-  ghostText: { color: colors.muted },
-  muted: { color: colors.muted },
-  card: {
-    borderWidth: 1,
-    borderColor: colors.line,
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 10,
-  },
-  cardTitle: { color: colors.text, fontWeight: "700", marginBottom: 4 },
-  cardBody: { color: colors.muted, marginBottom: 6 },
-  delete: { color: colors.danger, marginTop: 8, fontWeight: "600" },
-});
