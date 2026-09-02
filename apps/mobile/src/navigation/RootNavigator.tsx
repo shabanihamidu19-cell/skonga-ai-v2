@@ -1,6 +1,7 @@
 import { TouchableOpacity, Text, StyleSheet } from "react-native";
 import { createDrawerNavigator } from "@react-navigation/drawer";
 import { ChatScreen } from "../screens/ChatScreen";
+import { NotesScreen } from "../screens/NotesScreen";
 import { SettingsScreen } from "../screens/SettingsScreen";
 import { ProfileScreen } from "../screens/ProfileScreen";
 import { PayScreen } from "../screens/PayScreen";
@@ -28,6 +29,7 @@ export function RootNavigator() {
       })}
     >
       <Drawer.Screen name="Chat" component={ChatScreen} options={{ title: "SKONGA AI" }} />
+      <Drawer.Screen name="Notes" component={NotesScreen} options={{ title: "My Notes" }} />
       <Drawer.Screen name="Settings" component={SettingsScreen} />
       <Drawer.Screen name="Profile" component={ProfileScreen} />
       <Drawer.Screen name="Pay" component={PayScreen} options={{ title: "SKONGA Pro" }} />
