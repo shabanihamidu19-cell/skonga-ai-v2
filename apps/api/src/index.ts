@@ -1,6 +1,9 @@
 import express from "express";
 import cors from "cors";
+import { loadEnv } from "./loadEnv.js";
 import { router } from "./routes.js";
+
+loadEnv();
 
 const app = express();
 const port = Number(process.env.PORT ?? 8787);
