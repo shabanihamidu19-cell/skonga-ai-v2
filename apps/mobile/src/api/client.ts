@@ -1,6 +1,11 @@
 import type { Entitlement, PlanId } from "@skonga/shared";
 
 const BASE = process.env.EXPO_PUBLIC_API_URL ?? "";
+let authToken: string | null = null;
+
+export function setAuthToken(token: string | null): void {
+  authToken = token;
+}
 
 export class ApiError extends Error {
   constructor(
@@ -20,6 +25,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     ...init,
     headers: {
       "Content-Type": "application/json",
+      ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
       ...(init?.headers ?? {}),
     },
   });
@@ -50,15 +56,18 @@ export async function initiateStk(payload: {
   });
 }
 
-export async function fetchEntitlement(): Promise<Entitlement> {
-  return request("/v1/entitlement");
+export async function fetchEntitlement(phone?: string): Promise<Entitlement> {
+  const q = phone ? `?phone=${encodeURIComponent(phone.replace(/\D/g, ""))}` : "";
+  return request(`/v1/entitlement${q}`);
 }
 
 export async function login(email: string, password: string): Promise<{ token: string }> {
-  return request("/v1/auth/login", {
+  const res = await request<{ token: string }>("/v1/auth/login", {
     method: "POST",
     body: JSON.stringify({ email, password }),
   });
+  setAuthToken(res.token);
+  return res;
 }
 
 export function isApiConfigured(): boolean {
