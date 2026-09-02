@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { PRO_PLANS, detectNetwork, type Entitlement, type PlanId } from "@skonga/shared";
+import { generateImageOpenAI, providerStatus, visionWithOpenAI } from "./providers.js";
 import { db, newRef, type PaymentRecord } from "./store.js";
 import { generateReply, normalizeStyle } from "./tutor.js";
 
@@ -24,8 +25,8 @@ router.get("/health", (_req, res) => {
   res.json({
     ok: true,
     service: "skonga-api",
-    mode: process.env.LLM_API_KEY ? "llm" : "fallback",
     pay: process.env.PAY_PROVIDER ?? "mock",
+    providers: providerStatus(),
   });
 });
 
@@ -37,8 +38,47 @@ router.post("/v1/chat", async (req, res) => {
     res.status(400).json({ error: "message is required" });
     return;
   }
-  const reply = await generateReply(message, style);
-  res.json({ reply, threadId: threadId || null });
+  const { reply, provider } = await generateReply(message, style);
+  res.json({ reply, provider, threadId: threadId || null });
+});
+
+/** Vision: OpenAI only. Body: { prompt?, imageUrl } — imageUrl can be https or data:image/...;base64,... */
+router.post("/v1/vision", async (req, res) => {
+  const imageUrl = String(req.body?.imageUrl ?? "").trim();
+  const prompt = String(req.body?.prompt ?? "Read and solve this question for a Tanzanian student.").trim();
+  if (!imageUrl) {
+    res.status(400).json({ error: "imageUrl is required" });
+    return;
+  }
+  try {
+    const result = await visionWithOpenAI({ prompt, imageUrl });
+    if (!result) {
+      res.status(503).json({ error: "OpenAI vision unavailable. Set OPENAI_API_KEY on the server." });
+      return;
+    }
+    res.json({ reply: result.text, provider: result.provider });
+  } catch (e) {
+    res.status(502).json({ error: e instanceof Error ? e.message : "vision failed" });
+  }
+});
+
+/** Image generation: OpenAI only. Body: { prompt } */
+router.post("/v1/image", async (req, res) => {
+  const prompt = String(req.body?.prompt ?? "").trim();
+  if (!prompt) {
+    res.status(400).json({ error: "prompt is required" });
+    return;
+  }
+  try {
+    const result = await generateImageOpenAI(prompt);
+    if (!result) {
+      res.status(503).json({ error: "OpenAI image generation unavailable. Set OPENAI_API_KEY on the server." });
+      return;
+    }
+    res.json({ url: result.url, provider: result.provider });
+  } catch (e) {
+    res.status(502).json({ error: e instanceof Error ? e.message : "image generation failed" });
+  }
 });
 
 router.post("/v1/pay/stk", (req, res) => {
