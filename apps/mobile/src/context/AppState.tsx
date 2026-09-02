@@ -19,7 +19,7 @@ import {
   type PlanId,
   type UserSettings,
 } from "@skonga/shared";
-import { isApiConfigured, sendChat } from "../api/client";
+import { fetchEntitlement, isApiConfigured, sendChat, setAuthToken } from "../api/client";
 import {
   clearHistory,
   loadAppState,
@@ -28,6 +28,7 @@ import {
   saveNotes,
   saveSettings,
   saveThreads,
+  saveToken,
 } from "../storage";
 
 type AppContextValue = {
@@ -46,6 +47,9 @@ type AppContextValue = {
   send: (text: string) => Promise<"ok" | "limit" | "empty" | "busy">;
   updateSettings: (patch: Partial<UserSettings>) => void;
   unlockPro: (planId: PlanId) => void;
+  applyEntitlement: (next: Entitlement) => void;
+  refreshEntitlement: (phone?: string) => Promise<void>;
+  rememberToken: (token: string | null) => void;
   wipeHistory: () => void;
   addNote: (title: string, body: string) => void;
   updateNote: (id: string, title: string, body: string) => void;
@@ -81,6 +85,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         setEntitlement(s.entitlement);
         setActiveIdState(s.activeId);
         setNotes(s.notes);
+        if (s.token) setAuthToken(s.token);
       })
       .finally(() => setReady(true));
     const unsub = NetInfo.addEventListener((state) => {
@@ -105,6 +110,25 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const startNewChat = useCallback(() => {
     setActiveId(null);
   }, [setActiveId]);
+
+  const applyEntitlement = useCallback((next: Entitlement) => {
+    setEntitlement(next);
+    void saveEntitlement(next);
+  }, []);
+
+  const refreshEntitlement = useCallback(
+    async (phone?: string) => {
+      if (!isApiConfigured()) return;
+      const next = await fetchEntitlement(phone);
+      applyEntitlement(next);
+    },
+    [applyEntitlement]
+  );
+
+  const rememberToken = useCallback((token: string | null) => {
+    setAuthToken(token);
+    void saveToken(token);
+  }, []);
 
   const send = useCallback(
     async (text: string): Promise<"ok" | "limit" | "empty" | "busy"> => {
@@ -182,10 +206,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     const days = planId === "day" ? 1 : planId === "week" ? 7 : planId === "month" ? 30 : 365;
     const expires = new Date();
     expires.setDate(expires.getDate() + days);
-    const next: Entitlement = { isPro: true, planId, expiresAt: expires.toISOString() };
-    setEntitlement(next);
-    void saveEntitlement(next);
-  }, []);
+    applyEntitlement({ isPro: true, planId, expiresAt: expires.toISOString() });
+  }, [applyEntitlement]);
 
   const wipeHistory = useCallback(() => {
     setThreads([]);
@@ -239,6 +261,9 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       send,
       updateSettings,
       unlockPro,
+      applyEntitlement,
+      refreshEntitlement,
+      rememberToken,
       wipeHistory,
       addNote,
       updateNote,
@@ -260,6 +285,9 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       send,
       updateSettings,
       unlockPro,
+      applyEntitlement,
+      refreshEntitlement,
+      rememberToken,
       wipeHistory,
       addNote,
       updateNote,
