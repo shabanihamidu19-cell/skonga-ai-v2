@@ -6,7 +6,23 @@
     "orientation": "portrait",
     "scheme": "skonga",
     "userInterfaceStyle": "automatic",
-    "ios": { "supportsTablet": true, "bundleIdentifier": "tz.co.kclplatform.skonga" },
-    "android": { "package": "tz.co.kclplatform.skonga" }
+    "splash": { "backgroundColor": "#0d0f14" },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "tz.co.kclplatform.skonga",
+      "infoPlist": {
+        "NSCameraUsageDescription": "SKONGA uses the camera to scan homework questions.",
+        "NSPhotoLibraryUsageDescription": "SKONGA uses your photos to upload questions and notes."
+      }
+    },
+    "android": {
+      "package": "tz.co.kclplatform.skonga",
+      "adaptiveIcon": { "backgroundColor": "#0d0f14" },
+      "permissions": ["CAMERA"]
+    },
+    "plugins": ["expo-image-picker", "expo-document-picker"],
+    "extra": {
+      "eas": { "projectId": "replace-with-eas-project-id" }
+    }
   }
 }
