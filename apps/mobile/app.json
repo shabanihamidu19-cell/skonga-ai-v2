@@ -17,11 +17,13 @@
       "bundleIdentifier": "tz.co.kclplatform.skonga",
       "infoPlist": {
         "NSCameraUsageDescription": "SKONGA uses the camera to scan homework questions.",
-        "NSPhotoLibraryUsageDescription": "SKONGA uses your photos to upload questions and notes."
+        "NSPhotoLibraryUsageDescription": "SKONGA uses your photos to upload questions and notes.",
+        "NSAppTransportSecurity": { "NSAllowsLocalNetworking": true }
       }
     },
     "android": {
       "package": "tz.co.kclplatform.skonga",
+      "usesCleartextTraffic": true,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#0d0f14"
