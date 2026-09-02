@@ -1,4 +1,5 @@
 import { mockAssistantReply, type ResponseStyle } from "@skonga/shared";
+import { chatWithProviders } from "./providers.js";
 
 const STYLES: ResponseStyle[] = ["balanced", "concise", "detailed"];
 
@@ -6,46 +7,17 @@ export function normalizeStyle(style: unknown): ResponseStyle {
   return STYLES.includes(style as ResponseStyle) ? (style as ResponseStyle) : "balanced";
 }
 
-export async function generateReply(message: string, style: ResponseStyle): Promise<string> {
-  const url = process.env.LLM_API_URL;
-  const key = process.env.LLM_API_KEY;
-  if (url && key) {
-    try {
-      const res = await fetch(url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${key}`,
-        },
-        body: JSON.stringify({
-          model: process.env.LLM_MODEL ?? "gpt-4o-mini",
-          messages: [
-            {
-              role: "system",
-              content:
-                "You are SKONGA AI, a tutor for Tanzanian secondary students (Forms 1–6). Be accurate, kind, and bilingual-friendly (EN/SW). Do not invent syllabus citations.",
-            },
-            { role: "user", content: message },
-          ],
-        }),
-      });
-      if (res.ok) {
-        const data = (await res.json()) as {
-          choices?: { message?: { content?: string } }[];
-        };
-        const text = data.choices?.[0]?.message?.content?.trim();
-        if (text) return text;
-      }
-    } catch {
-      // fall through to local tutor
-    }
-  }
+export async function generateReply(
+  message: string,
+  style: ResponseStyle
+): Promise<{ reply: string; provider: string }> {
+  const live = await chatWithProviders(message);
+  if (live) return { reply: live.text, provider: live.provider };
 
-  const local = mockAssistantReply(message, style);
-  return (
-    local.replace(
-      "This client build uses a local mock until the chat backend is connected.",
-      "Backend is running in tutor-fallback mode. Connect LLM_API_URL + LLM_API_KEY for live answers."
-    )
+  // Local tutor only if no provider keys work — not the happy path
+  const local = mockAssistantReply(message, style).replace(
+    "This client build uses a local mock until the chat backend is connected.",
+    "No chat provider responded. Set GROQ_API_KEY (default), GEMINI_API_KEY (default2), or OPENAI / OPENROUTER on the server."
   );
+  return { reply: local, provider: "local-fallback" };
 }
