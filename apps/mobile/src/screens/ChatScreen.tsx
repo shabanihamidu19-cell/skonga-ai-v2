@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -16,14 +16,68 @@ import type { DrawerNavigationProp } from "@react-navigation/drawer";
 import * as ImagePicker from "expo-image-picker";
 import { greeting } from "@skonga/shared";
 import { useAppState } from "../context/AppState";
-import { colors } from "../theme";
+import { useTheme } from "../context/ThemeContext";
 import type { DrawerParamList } from "../navigation/types";
 
 export function ChatScreen() {
   const nav = useNavigation<DrawerNavigationProp<DrawerParamList>>();
   const { active, settings, remaining, entitlement, online, sending, send } = useAppState();
+  const { colors } = useTheme();
   const [draft, setDraft] = useState("");
   const welcome = `${greeting(settings.preferredName)} I'm SKONGA AI — how can I help you today?`;
+
+  const styles = useMemo(
+    () =>
+      StyleSheet.create({
+        root: { flex: 1, backgroundColor: colors.bg },
+        offline: { backgroundColor: colors.offlineBg, padding: 8, alignItems: "center" },
+        offlineText: { color: colors.offlineText, fontSize: 12 },
+        messages: { padding: 16, paddingBottom: 24 },
+        bubble: { color: colors.text, marginBottom: 14, lineHeight: 22, fontSize: 16 },
+        user: { color: colors.accentSoft, textAlign: "right" },
+        muted: { color: colors.muted, marginTop: 8 },
+        typing: { flexDirection: "row", alignItems: "center", marginBottom: 8 },
+        tools: { flexDirection: "row", gap: 8, paddingHorizontal: 12, paddingBottom: 4 },
+        tool: {
+          borderWidth: 1,
+          borderColor: colors.line,
+          borderRadius: 20,
+          paddingHorizontal: 12,
+          paddingVertical: 6,
+        },
+        toolText: { color: colors.accentSoft, fontWeight: "600", fontSize: 13 },
+        composer: {
+          flexDirection: "row",
+          gap: 8,
+          padding: 12,
+          borderTopColor: colors.line,
+          borderTopWidth: 1,
+          alignItems: "flex-end",
+        },
+        input: {
+          flex: 1,
+          minHeight: 44,
+          maxHeight: 120,
+          borderWidth: 1,
+          borderColor: colors.line,
+          borderRadius: 12,
+          color: colors.text,
+          paddingHorizontal: 12,
+          paddingVertical: 10,
+        },
+        btn: {
+          backgroundColor: colors.accent,
+          borderRadius: 12,
+          paddingHorizontal: 16,
+          paddingVertical: 12,
+          minWidth: 72,
+          alignItems: "center",
+        },
+        btnDisabled: { opacity: 0.6 },
+        btnText: { color: "#fff", fontWeight: "700" },
+      }),
+    [colors]
+  );
 
   async function onSend() {
     const result = await send(draft);
@@ -113,52 +167,3 @@ export function ChatScreen() {
     </KeyboardAvoidingView>
   );
 }
-
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.bg },
-  offline: { backgroundColor: "#3f2a14", padding: 8, alignItems: "center" },
-  offlineText: { color: "#fbbf24", fontSize: 12 },
-  messages: { padding: 16, paddingBottom: 24 },
-  bubble: { color: colors.text, marginBottom: 14, lineHeight: 22, fontSize: 16 },
-  user: { color: colors.accentSoft, textAlign: "right" },
-  muted: { color: colors.muted, marginTop: 8 },
-  typing: { flexDirection: "row", alignItems: "center", marginBottom: 8 },
-  tools: { flexDirection: "row", gap: 8, paddingHorizontal: 12, paddingBottom: 4 },
-  tool: {
-    borderWidth: 1,
-    borderColor: colors.line,
-    borderRadius: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-  },
-  toolText: { color: colors.accentSoft, fontWeight: "600", fontSize: 13 },
-  composer: {
-    flexDirection: "row",
-    gap: 8,
-    padding: 12,
-    borderTopColor: colors.line,
-    borderTopWidth: 1,
-    alignItems: "flex-end",
-  },
-  input: {
-    flex: 1,
-    minHeight: 44,
-    maxHeight: 120,
-    borderWidth: 1,
-    borderColor: colors.line,
-    borderRadius: 12,
-    color: colors.text,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-  },
-  btn: {
-    backgroundColor: colors.accent,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    minWidth: 72,
-    alignItems: "center",
-  },
-  btnDisabled: { opacity: 0.6 },
-  btnText: { color: "white", fontWeight: "700" },
-});
