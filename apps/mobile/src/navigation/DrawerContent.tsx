@@ -32,6 +32,9 @@ export function DrawerContent(props: DrawerContentComponentProps) {
           </TouchableOpacity>
         ))}
       </ScrollView>
+      <TouchableOpacity onPress={() => navigation.navigate("Notes")}>
+        <Text style={styles.item}>My Notes</Text>
+      </TouchableOpacity>
       <TouchableOpacity onPress={() => navigation.navigate("Profile")}>
         <Text style={styles.item}>Profile</Text>
       </TouchableOpacity>
