@@ -8,6 +8,7 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "typecheck": "tsc --noEmit",
+    "icons": "python3 scripts/generate-icons.py",
     "eas:android": "eas build --platform android --profile preview",
     "eas:ios": "eas build --platform ios --profile preview"
   },
