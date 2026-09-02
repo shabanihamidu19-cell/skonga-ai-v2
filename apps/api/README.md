@@ -1,47 +1,42 @@
 # SKONGA API
 
-Express + TypeScript backend for the mobile app.
+Express + TypeScript backend. **All LLM / payment keys stay on the server.**
 
-**Does not store LLM or STK secrets in the client.**
+## Provider routing
+
+| Feature | Provider order |
+| --- | --- |
+| **Chat** | 1. **Groq** (default) → 2. **Gemini** (default2) → 3. **OpenAI** → 4. **OpenRouter** (if OpenAI missing/fails) |
+| **Vision** | **OpenAI** only |
+| **Image generate** | **OpenAI** only |
+
+Local tutor text is used only if **no** chat provider returns a reply.
 
 ## Run
 
 ```bash
-# from repo root
 npm install
 cp apps/api/.env.example apps/api/.env
+# paste GROQ_API_KEY (and others) into apps/api/.env — never commit
 npm run api
 ```
 
-Server: `http://localhost:8787`
+Health (shows which keys are configured, not the keys themselves):
 
-Health: `GET http://localhost:8787/health`
+```bash
+curl http://localhost:8787/health
+```
 
-## Endpoints matching the mobile client
+## Endpoints
 
-| Method | Path | Notes |
+| Method | Path | Body |
 | --- | --- | --- |
-| POST | `/v1/chat` | `{ threadId, message, style }` → `{ reply }` |
-| POST | `/v1/pay/stk` | `{ planId, phone }` → `{ reference, status }` |
-| POST | `/v1/pay/callback` | Simulate provider callback `{ reference, status: "paid" }` |
-| GET | `/v1/entitlement?phone=` | Source of truth (in-memory for now) |
-| POST | `/v1/auth/login` | `{ email, password }` → `{ token }` |
+| POST | `/v1/chat` | `{ threadId?, message, style? }` → `{ reply, provider }` |
+| POST | `/v1/vision` | `{ imageUrl, prompt? }` → `{ reply, provider }` (OpenAI) |
+| POST | `/v1/image` | `{ prompt }` → `{ url, provider }` (OpenAI) |
+| POST | `/v1/pay/stk` | `{ planId, phone }` |
+| POST | `/v1/pay/callback` | `{ reference, status }` |
+| GET | `/v1/entitlement` | `?phone=` |
+| POST | `/v1/auth/login` | `{ email, password }` |
 
-## Point the app at this API
-
-`apps/mobile/.env`
-
-```
-EXPO_PUBLIC_API_URL=http://localhost:8787
-```
-
-On a physical phone use your computer LAN IP, e.g. `http://192.168.1.10:8787`.
-
-## Live LLM (optional)
-
-Set `LLM_API_URL` + `LLM_API_KEY` in `apps/api/.env`.
-If missing, the tutor-fallback reply is returned.
-
-## STK
-
-`PAY_PROVIDER=mock` until real aggregator credentials exist **on the server only**.
+Mobile: `EXPO_PUBLIC_API_URL=http://localhost:8787` (or LAN IP / Render HTTPS).
