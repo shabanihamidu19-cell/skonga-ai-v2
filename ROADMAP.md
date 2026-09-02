@@ -12,6 +12,8 @@ Owner track for turning the Expo app into a store-ready product for Tanzanian st
 - [x] Sending / loading state
 - [x] API client stubs (`/v1/chat`, `/v1/pay/stk`, `/v1/entitlement`, `/v1/auth/login`)
 - [x] EAS build profiles (Android APK + iOS)
+- [x] Theme system-wide (dark / light / auto from Settings)
+- [x] Icons + splash pipeline (SVG masters + generate-icons.py + app.json paths)
 
 ## Next — backend (blocks real money and real AI)
 
@@ -24,8 +26,8 @@ Owner track for turning the Expo app into a store-ready product for Tanzanian st
 ## Next — mobile polish
 
 - [ ] Upload scanned images to backend (multipart), not URI-only text
-- [ ] Theme colors applied from Settings (light/dark system-wide)
-- [ ] App icons + splash from brand assets
+- [ ] Final brand PNGs (replace placeholders from design)
+- [ ] Theme remaining screens (Notes / Pay / Profile) to match Chat
 - [ ] Push notifications when AI reply finishes
 - [ ] EN + SW strings
 - [ ] Crash reporting (Sentry) + analytics (privacy-respecting)
